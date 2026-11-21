@@ -240,32 +240,53 @@ struct SettingsView: View {
     @ObservedObject var chat: ChatStore
     @Environment(\.dismiss) private var dismiss
     @State private var key = ""
+    @StateObject private var signIn = OpenRouterSignIn()
+    @State private var connectionError: String?
     var body: some View {
         NavigationView {
             Form {
-                Section(header: Text("Real AI Connection")) {
-                    Text("LOG uses OpenRouter's FREE model router. Create a free account and API key, then paste it here. No key is included in the app.")
+                Section(header: Text("Connect AI automatically")) {
+                    Text("Sign in with OpenRouter once. LOG creates and saves your own API key automatically—no copying or pasting.")
                         .font(.subheadline)
-                    Link("Get a free API key", destination: URL(string: "https://openrouter.ai/settings/keys")!)
+                    Button {
+                        signIn.connect { result in
+                            switch result {
+                            case .success(let newKey):
+                                chat.saveKey(newKey)
+                                dismiss()
+                            case .failure(let error):
+                                connectionError = error.localizedDescription
+                            }
+                        }
+                    } label: {
+                        HStack {
+                            if signIn.connecting { ProgressView() }
+                            Text(signIn.connecting ? "Connecting to OpenRouter…" : "Sign in with OpenRouter")
+                        }
+                    }.disabled(signIn.connecting)
+                    if let error = connectionError {
+                        Text(error).font(.caption).foregroundColor(.red)
+                    }
+                    if chat.hasKey {
+                        Label("Connected securely", systemImage: "checkmark.shield")
+                        Button("Disconnect", role: .destructive) {
+                            chat.saveKey("")
+                        }
+                    }
+                }
+                Section(header: Text("Manual key — optional")) {
                     SecureField("OpenRouter API key", text: $key)
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
-                    Button("Save Key on This iPhone") {
+                    Button("Save Key") {
                         chat.saveKey(key)
                         key = ""
                         dismiss()
                     }.disabled(key.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                    if chat.hasKey {
-                        Label("A key is stored in iPhone Keychain", systemImage: "checkmark.shield")
-                        Button("Remove Saved Key", role: .destructive) {
-                            chat.saveKey("")
-                            dismiss()
-                        }
-                    }
                 }
                 Section(header: Text("Privacy & Limits")) {
                     Text("Free models have limits and may be unavailable. Your chat messages go to OpenRouter and its selected AI model provider. Chat history stays in this app on your iPhone. Your API key is stored in the iPhone Keychain.")
-                    Text("Only the free route (openrouter/free) is used. The app does not automatically select paid models.")
+                    Text("Only the free route (openrouter/free) is used. The app does not automatically select paid models. OpenRouter sign-in may ask you to approve a key with access to your account credits; check its permission and spending limit before approving.")
                 }
             }
             .navigationTitle("LOG Settings")
