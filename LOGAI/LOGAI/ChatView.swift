@@ -201,8 +201,7 @@ struct ChatView: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
                 HStack(spacing: 10) {
-                    TextField("Message LOG…", text: $draft, axis: .vertical)
-                        .lineLimit(1...4)
+                    TextField("Message LOG…", text: $draft)
                         .padding(12)
                         .background(Color(.secondarySystemBackground))
                         .cornerRadius(15)
