@@ -1,0 +1,41 @@
+name: Build LOG AI IPA
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'LOGAI/**'
+      - '.github/workflows/build-logai.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: macos-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: LOGAI
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install XcodeGen
+        run: brew install xcodegen
+      - name: Generate Xcode project
+        run: xcodegen generate
+      - name: Build unsigned iPhone 7 app
+        run: |
+          xcodebuild -project LOGAI.xcodeproj -scheme LOGAI \
+            -configuration Release -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY='' build
+      - name: Package unsigned IPA for Sideloadly
+        run: |
+          mkdir -p Payload
+          cp -R build/Build/Products/Release-iphoneos/LOGAI.app Payload/
+          zip -qry LOGAI-unsigned.ipa Payload
+          unzip -t LOGAI-unsigned.ipa
+      - uses: actions/upload-artifact@v4
+        with:
+          name: LOGAI-IPA
+          path: LOGAI/LOGAI-unsigned.ipa
