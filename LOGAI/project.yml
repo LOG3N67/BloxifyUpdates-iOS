@@ -10,6 +10,14 @@ targets:
       - LOGAI
     info:
       path: LOGAI/Info.plist
+      properties:
+        CFBundleURLTypes:
+          - CFBundleURLName: app.log67.ai.oauth
+            CFBundleURLSchemes:
+              - logai
+        CFBundleDisplayName: LOG AI
+        CFBundleShortVersionString: "$(MARKETING_VERSION)"
+        CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: app.log67.ai
